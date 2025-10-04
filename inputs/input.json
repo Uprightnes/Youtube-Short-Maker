@@ -1,0 +1,25 @@
+[
+  {
+    "type": "quiz",
+    "background": "inputs/movie_clip.gif",
+    "question": "Who directed Inception?",
+    "options": ["A. Steven Spielberg", "B. Christopher Nolan", "C. James Cameron", "D. Quentin Tarantino"],
+    "correct_answer": "B",
+    "timer": 10,
+    "font": "inputs/BebasNeue-Regular.ttf",
+    "font_color": "white",
+    "theme": "movie",
+    "audio": "inputs/background_music.mp3",
+    "output": "outputs/quiz_inception.mp4"
+  },
+  {
+    "type": "fact",
+    "background": "inputs/matrix_poster.jpg",
+    "fact": "Did you know? The iconic 'bullet time' effect in The Matrix was created using 120 cameras set up in a circle.",
+    "font": "inputs/BebasNeue-Regular.ttf",
+    "font_color": "yellow",
+    "theme": "movie",
+    "audio": "inputs/background_music.mp3",
+    "output": "outputs/matrix_fact.mp4"
+  }
+]
