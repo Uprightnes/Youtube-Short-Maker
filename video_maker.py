@@ -12,7 +12,8 @@ RESOLUTION = (1080, 1920)  # 9:16 for YouTube Shorts
 FPS = 30
 FONT_SIZE = 50
 TIMER_FONT_SIZE = 120
-OUTRO_TEXT = "Subscribe for more quizzes! 🎬"
+OUTRO_TEXT_QUIZ = "Subscribe for more quizzes!"
+OUTRO_TEXT_FACT = "Subscribe for more fun facts!"
 INTRO_DURATION = 2
 OUTRO_DURATION = 3
 
@@ -37,7 +38,7 @@ def load_background(media_path, duration):
     else:  # Image
         return ImageClip(media_path, duration=duration).resize(RESOLUTION)
 
-def create_text_with_shadow(text, font_name, color, size, resolution=RESOLUTION, shadow=True, max_width=900):
+def create_text_with_shadow(text, font_name, color, size, resolution=RESOLUTION, shadow=True, max_width=900, shake_offset=(0, 0)):
     """Create text with semi-transparent shadow overlay for better readability."""
     img = Image.new('RGBA', resolution, (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
@@ -78,9 +79,9 @@ def create_text_with_shadow(text, font_name, color, size, resolution=RESOLUTION,
         else:
             lines.append('')
     
-    # Calculate text positioning
+    # Calculate text positioning (apply shake offset)
     total_height = len(lines) * (size + 15)
-    y_offset = (resolution[1] - total_height) // 2
+    y_offset = (resolution[1] - total_height) // 2 + shake_offset[1]
     
     # Draw semi-transparent background
     if shadow:
@@ -95,7 +96,7 @@ def create_text_with_shadow(text, font_name, color, size, resolution=RESOLUTION,
                 line_width = bbox[2] - bbox[0]
                 max_width_actual = max(max_width_actual, line_width)
         
-        left = max(20, (resolution[0] - max_width_actual) // 2 - padding)
+        left = max(20, (resolution[0] - max_width_actual) // 2 - padding + shake_offset[0])
         top = y_offset - padding
         right = min(resolution[0] - 20, left + max_width_actual + 2 * padding)
         bottom = top + total_height + 2 * padding
@@ -192,10 +193,7 @@ def create_highlight_animation(text, font_name, size, resolution=RESOLUTION):
                           x_center + max_width//2 + padding, y_start + total_height + padding],
                           radius=20, fill=(0, 200, 0, 255))
     
-    # Checkmark
-    draw.text((x_center - max_width//2 - 100, y_start + total_height//2 - 40), "✓", font=font, fill=(255, 255, 255))
-    
-    # Answer text
+    # Answer text (no checkmark)
     y_pos = y_start
     for line in wrapped_lines:
         bbox = draw.textbbox((0, 0), line, font=font)
@@ -234,7 +232,7 @@ def create_fact_text_with_header(fact_text, font_name, color, size, resolution=R
     header_height = header_bbox[3] - header_bbox[1]
     
     total_height = header_height + 40 + len(fact_lines) * (size + 10)
-    y_start = (resolution[1] - total_height) // 2 + 400  # Position lower to accommodate poster
+    y_start = (resolution[1] - total_height) // 2 + 150  # Centered, slightly below poster
     
     # Draw background
     max_width = header_width
@@ -283,17 +281,38 @@ def create_quiz_video(data):
     # Load background for entire duration
     bg_clip = load_background(data['background'], total_duration)
     
+    # Load brand logo if provided
+    logo_clip = None
+    if 'logo' in data and os.path.exists(data['logo']):
+        try:
+            logo_clip = ImageClip(data['logo']).resize(height=120).set_position((50, 50)).set_duration(total_duration)
+        except Exception as e:
+            print(f"Warning: Could not load logo - {e}")
+    
     all_clips = []
     current_time = 0
     
-    # INTRO (2 seconds)
-    intro_img = create_text_with_shadow("Movie Quiz Time! 🎬", data.get('font', 'Arial'), 
-                                       data.get('font_color', 'white'), FONT_SIZE + 10)
-    intro_text = ImageClip(intro_img).set_duration(INTRO_DURATION)
-    intro_bg = bg_clip.subclip(current_time, current_time + INTRO_DURATION)
-    intro_composite = CompositeVideoClip([intro_bg, intro_text], size=RESOLUTION)
-    all_clips.append(intro_composite)
-    current_time += INTRO_DURATION
+    # Shake animation pattern
+    shake_offsets = [(5, 3), (-3, -5), (4, 2), (-2, -3), (0, 0), (3, -2), (-4, 4), (2, -1)]
+    frame_duration = INTRO_DURATION / len(shake_offsets)
+    
+    # INTRO (2 seconds) with shake animation
+    intro_clips = []
+    for offset in shake_offsets:
+        intro_img = create_text_with_shadow("Movie Quiz Time!", data.get('font', 'Arial'), 
+                                           data.get('font_color', 'white'), FONT_SIZE + 10, shake_offset=offset)
+        intro_text = ImageClip(intro_img).set_duration(frame_duration)
+        intro_bg = bg_clip.subclip(current_time, current_time + frame_duration)
+        
+        layers = [intro_bg, intro_text]
+        if logo_clip:
+            layers.append(logo_clip.subclip(current_time, current_time + frame_duration))
+        
+        intro_composite = CompositeVideoClip(layers, size=RESOLUTION)
+        intro_clips.append(intro_composite)
+        current_time += frame_duration
+    
+    all_clips.extend(intro_clips)
     
     # QUIZ SECTION with timer
     question_text = f"{data['question']}\n\n" + "\n".join(data['options'])
@@ -313,7 +332,11 @@ def create_quiz_video(data):
         timer_overlay = ImageClip(timer_img).set_duration(1)
         
         # Composite all layers
-        composite = CompositeVideoClip([bg_segment, question_overlay, timer_overlay], size=RESOLUTION)
+        layers = [bg_segment, question_overlay, timer_overlay]
+        if logo_clip:
+            layers.append(logo_clip.subclip(current_time, current_time + 1))
+        
+        composite = CompositeVideoClip(layers, size=RESOLUTION)
         all_clips.append(composite)
         current_time += 1
     
@@ -322,17 +345,32 @@ def create_quiz_video(data):
                                            data.get('font', 'Arial'), FONT_SIZE)
     answer_overlay = ImageClip(answer_img).set_duration(answer_reveal_duration)
     answer_bg = bg_clip.subclip(current_time, current_time + answer_reveal_duration)
-    answer_composite = CompositeVideoClip([answer_bg, answer_overlay], size=RESOLUTION)
+    
+    layers = [answer_bg, answer_overlay]
+    if logo_clip:
+        layers.append(logo_clip.subclip(current_time, current_time + answer_reveal_duration))
+    
+    answer_composite = CompositeVideoClip(layers, size=RESOLUTION)
     all_clips.append(answer_composite)
     current_time += answer_reveal_duration
     
-    # OUTRO (3 seconds)
-    outro_img = create_text_with_shadow(OUTRO_TEXT, data.get('font', 'Arial'),
-                                       data.get('font_color', 'white'), FONT_SIZE)
-    outro_overlay = ImageClip(outro_img).set_duration(OUTRO_DURATION)
-    outro_bg = bg_clip.subclip(current_time, min(current_time + OUTRO_DURATION, bg_clip.duration))
-    outro_composite = CompositeVideoClip([outro_bg, outro_overlay], size=RESOLUTION)
-    all_clips.append(outro_composite)
+    # OUTRO (3 seconds) with shake animation
+    outro_clips = []
+    for offset in shake_offsets:
+        outro_img = create_text_with_shadow(OUTRO_TEXT_QUIZ, data.get('font', 'Arial'),
+                                           data.get('font_color', 'white'), FONT_SIZE, shake_offset=offset)
+        outro_overlay = ImageClip(outro_img).set_duration(frame_duration)
+        outro_bg = bg_clip.subclip(current_time, min(current_time + frame_duration, bg_clip.duration))
+        
+        layers = [outro_bg, outro_overlay]
+        if logo_clip:
+            layers.append(logo_clip.subclip(current_time, min(current_time + frame_duration, bg_clip.duration)))
+        
+        outro_composite = CompositeVideoClip(layers, size=RESOLUTION)
+        outro_clips.append(outro_composite)
+        current_time += frame_duration
+    
+    all_clips.extend(outro_clips)
     
     # Concatenate all clips
     final_clip = concatenate_videoclips(all_clips, method="compose")
@@ -358,7 +396,7 @@ def create_quiz_video(data):
                                audio_codec='aac', threads=4)
     final_clip.close()
     bg_clip.close()
-    print(f"✅ Quiz video created: {data['output']}")
+    print(f"Quiz video created: {data['output']}")
 
 def create_fact_video(data):
     """Generate fun fact video with poster."""
@@ -366,16 +404,35 @@ def create_fact_video(data):
     total_duration = INTRO_DURATION + fact_duration + OUTRO_DURATION
     
     bg_clip = load_background(data['background'], total_duration)
+    
+    # Load brand logo if provided
+    logo_clip = None
+    if 'logo' in data and os.path.exists(data['logo']):
+        try:
+            logo_clip = ImageClip(data['logo']).resize(height=120).set_position((50, 50)).set_duration(total_duration)
+        except Exception as e:
+            print(f"Warning: Could not load logo - {e}")
+    
     all_clips = []
     current_time = 0
     
-    # Intro
-    intro_img = create_text_with_shadow("Movie Fun Fact! 🎬", data.get('font', 'Arial'),
-                                       data.get('font_color', 'white'), FONT_SIZE + 10)
-    intro_overlay = ImageClip(intro_img).set_duration(INTRO_DURATION)
-    intro_bg = bg_clip.subclip(0, INTRO_DURATION)
-    all_clips.append(CompositeVideoClip([intro_bg, intro_overlay], size=RESOLUTION))
-    current_time += INTRO_DURATION
+    # Shake animation pattern
+    shake_offsets = [(5, 3), (-3, -5), (4, 2), (-2, -3), (0, 0), (3, -2), (-4, 4), (2, -1)]
+    frame_duration = INTRO_DURATION / len(shake_offsets)
+    
+    # Intro with shake animation
+    for offset in shake_offsets:
+        intro_img = create_text_with_shadow("Movie Fun Fact!", data.get('font', 'Arial'),
+                                           data.get('font_color', 'white'), FONT_SIZE + 10, shake_offset=offset)
+        intro_overlay = ImageClip(intro_img).set_duration(frame_duration)
+        intro_bg = bg_clip.subclip(current_time, current_time + frame_duration)
+        
+        layers = [intro_bg, intro_overlay]
+        if logo_clip:
+            layers.append(logo_clip.subclip(current_time, current_time + frame_duration))
+        
+        all_clips.append(CompositeVideoClip(layers, size=RESOLUTION))
+        current_time += frame_duration
     
     # Fun Fact with header
     fact_img = create_fact_text_with_header(data['fact'], data.get('font', 'Arial'),
@@ -389,17 +446,26 @@ def create_fact_video(data):
         poster = ImageClip(data['poster']).resize(height=700).set_position(('center', 150)).set_duration(fact_duration)
         layers.append(poster)
     layers.append(fact_overlay)
+    if logo_clip:
+        layers.append(logo_clip.subclip(current_time, current_time + fact_duration))
     
     fact_composite = CompositeVideoClip(layers, size=RESOLUTION)
     all_clips.append(fact_composite)
     current_time += fact_duration
     
-    # Outro
-    outro_img = create_text_with_shadow(OUTRO_TEXT, data.get('font', 'Arial'),
-                                       data.get('font_color', 'white'), FONT_SIZE)
-    outro_overlay = ImageClip(outro_img).set_duration(OUTRO_DURATION)
-    outro_bg = bg_clip.subclip(current_time, min(current_time + OUTRO_DURATION, bg_clip.duration))
-    all_clips.append(CompositeVideoClip([outro_bg, outro_overlay], size=RESOLUTION))
+    # Outro with shake animation
+    for offset in shake_offsets:
+        outro_img = create_text_with_shadow(OUTRO_TEXT_FACT, data.get('font', 'Arial'),
+                                           data.get('font_color', 'white'), FONT_SIZE, shake_offset=offset)
+        outro_overlay = ImageClip(outro_img).set_duration(frame_duration)
+        outro_bg = bg_clip.subclip(current_time, min(current_time + frame_duration, bg_clip.duration))
+        
+        layers = [outro_bg, outro_overlay]
+        if logo_clip:
+            layers.append(logo_clip.subclip(current_time, min(current_time + frame_duration, bg_clip.duration)))
+        
+        all_clips.append(CompositeVideoClip(layers, size=RESOLUTION))
+        current_time += frame_duration
     
     final_clip = concatenate_videoclips(all_clips, method="compose")
     
@@ -422,7 +488,7 @@ def create_fact_video(data):
                                audio_codec='aac', threads=4)
     final_clip.close()
     bg_clip.close()
-    print(f"✅ Fun fact video created: {data['output']}")
+    print(f"Fun fact video created: {data['output']}")
 
 def process_input(input_file):
     """Process JSON input."""
@@ -430,7 +496,7 @@ def process_input(input_file):
         data_list = json.load(f)
     
     for idx, data in enumerate(data_list, 1):
-        print(f"\n🎬 Generating video {idx}/{len(data_list)}...")
+        print(f"\nGenerating video {idx}/{len(data_list)}...")
         if data['type'] == 'quiz':
             create_quiz_video(data)
         elif data['type'] == 'fact':

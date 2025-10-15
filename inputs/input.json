@@ -1,25 +1,25 @@
 [
   {
     "type": "quiz",
-    "background": "inputs/movie_clip.gif",
-    "question": "Who directed Inception?",
-    "options": ["A. Steven Spielberg", "B. Christopher Nolan", "C. James Cameron", "D. Quentin Tarantino"],
-    "correct_answer": "B",
+    "background": "inputs/one_battle_after_another.mp4",
+    "question": "Who plays Lockjaw’s intimidating second-in-command, Danvers?",
+    "options": ["A. Josh Brolin", "B. James 'Jim' Raterman", "C. Jeffrey Wright", "D. Shea Whigham"],
+    "correct_answer": "B - James 'Jim' Raterman",
     "timer": 10,
     "font": "inputs/BebasNeue-Regular.ttf",
     "font_color": "white",
-    "theme": "movie",
+    "logo": "inputs/moviecity-logo.jpg",
     "audio": "inputs/background_music.mp3",
-    "output": "outputs/quiz_inception.mp4"
+    "output": "outputs/quiz_one_battle_after_another.mp4"
   },
   {
     "type": "fact",
-    "background": "inputs/matrix_poster.jpg",
-    "fact": "Did you know? The iconic 'bullet time' effect in The Matrix was created using 120 cameras set up in a circle.",
+    "background": "inputs/one_battle_after_another_POSTER.jpg",
+    "fact": "Lockjaw’s ruthless second-in-command, Danvers, is portrayed by real-life former HSI Special Agent James ‘Jim’ Raterman, marking his first-ever acting role. His interrogation scenes were so authentic that crew members reportedly felt genuinely intimidated on set.",
     "font": "inputs/BebasNeue-Regular.ttf",
     "font_color": "yellow",
-    "theme": "movie",
+    "logo": "inputs/moviecity-logo.jpg",
     "audio": "inputs/background_music.mp3",
-    "output": "outputs/matrix_fact.mp4"
+    "output": "outputs/one_battle_after_another_fact.mp4"
   }
 ]
