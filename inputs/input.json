@@ -1,25 +1,106 @@
 [
   {
     "type": "quiz",
-    "background": "inputs/one_battle_after_another.mp4",
-    "question": "Who plays Lockjaw’s intimidating second-in-command, Danvers?",
-    "options": ["A. Josh Brolin", "B. James 'Jim' Raterman", "C. Jeffrey Wright", "D. Shea Whigham"],
-    "correct_answer": "B - James 'Jim' Raterman",
+    "question": "Who directed Inception?",
+    "options": ["A. Steven Spielberg", "B. Christopher Nolan", "C. James Cameron", "D. Quentin Tarantino"],
+    "correct_answer": "B. Christopher Nolan",
     "timer": 10,
-    "font": "inputs/BebasNeue-Regular.ttf",
-    "font_color": "white",
-    "logo": "inputs/moviecity-logo.jpg",
+    "background": "inputs/background.gif",
     "audio": "inputs/background_music.mp3",
-    "output": "outputs/quiz_one_battle_after_another.mp4"
+    "logo": "inputs/moviecity-logo.jpg",
+    "font": "Arial",
+    "font_color": "white",
+    "output": "outputs/quiz_inception.mp4"
   },
   {
     "type": "fact",
-    "background": "inputs/one_battle_after_another_POSTER.jpg",
-    "fact": "Lockjaw’s ruthless second-in-command, Danvers, is portrayed by real-life former HSI Special Agent James ‘Jim’ Raterman, marking his first-ever acting role. His interrogation scenes were so authentic that crew members reportedly felt genuinely intimidated on set.",
-    "font": "inputs/BebasNeue-Regular.ttf",
-    "font_color": "yellow",
-    "logo": "inputs/moviecity-logo.jpg",
+    "fact": "The iconic 'bullet time' effect in The Matrix was created using 120 cameras set up in a circle!",
+    "background": "inputs/background.gif",
     "audio": "inputs/background_music.mp3",
-    "output": "outputs/one_battle_after_another_fact.mp4"
+    "poster": "inputs/matrix_poster.jpg",
+    "logo": "inputs/moviecity-logo.jpg",
+    "font": "Arial",
+    "font_color": "white",
+    "output": "outputs/fact_matrix.mp4"
+  },
+  {
+    "type": "emoji_guess",
+    "emojis": ["🦇", "💰", "🏙️"],
+    "movie_title": "The Dark Knight",
+    "fun_fact": "Heath Ledger's Joker improvised the hospital explosion scene!",
+    "background": "inputs/background.gif",
+    "audio": "inputs/background_music.mp3",
+    "poster": "inputs/dark_knight_poster.jpeg",
+    "logo": "inputs/moviecity-logo.jpg",
+    "font": "Arial",
+    "font_color": "white",
+    "output": "outputs/emoji_dark_knight.mp4"
+  },
+  {
+    "type": "character_reveal",
+    "character_image": "inputs/batman_character.jpeg",
+    "hint": "Billionaire Vigilante",
+    "character_name": "Batman",
+    "movie_title": "The Dark Knight",
+    "background": "inputs/background.gif",
+    "audio": "inputs/background_music.mp3",
+    "logo": "inputs/moviecity-logo.jpg",
+    "font": "Arial",
+    "font_color": "white",
+    "output": "outputs/character_batman.mp4"
+  },
+  {
+    "type": "minimalist_challenge",
+    "minimalist_icon": "inputs/inception_minimalist.jpeg",
+    "movie_poster": "inputs/inception_poster.jpg",
+    "background": "inputs/background.gif",
+    "audio": "inputs/background_music.mp3",
+    "logo": "inputs/moviecity-logo.jpg",
+    "font": "Arial",
+    "font_color": "white",
+    "output": "outputs/minimalist_inception.mp4"
+  },
+  {
+    "type": "then_now",
+    "comparisons": [
+      {
+        "name": "Daniel Radcliffe",
+        "then_image": "inputs/radcliffe_then.jpeg",
+        "then_year": "2001",
+        "now_image": "inputs/radcliffe_now.jpeg",
+        "now_year": "2025"
+      },
+      {
+        "name": "Emma Watson",
+        "then_image": "inputs/watson_then.jpeg",
+        "then_year": "2001",
+        "now_image": "inputs/watson_now.jpeg",
+        "now_year": "2025"
+      }
+    ],
+    "background": "inputs/background.gif",
+    "audio": "inputs/background_music.mp3",
+    "logo": "inputs/moviecity-logo.jpg",
+    "font": "Arial",
+    "font_color": "white",
+    "output": "outputs/then_now_harry_potter.mp4"
+  },
+  {
+    "type": "opinion",
+    "opinions": [
+      "The Godfather Part III is better than Part II",
+      "Iron Man is the most annoying Avenger",
+      "Titanic is overrated",
+      "The Matrix sequels are underrated",
+      "Avatar doesn't deserve its box office success"
+    ],
+    "background": "inputs/background.gif",
+    "audio": "inputs/background_music.mp3",
+    "logo": "inputs/moviecity-logo.jpg",
+    "font": "Arial",
+    "font_color": "white",
+    "output": "outputs/opinion_hot_takes.mp4"
   }
 ]
+
+

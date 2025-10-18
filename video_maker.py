@@ -1,7 +1,7 @@
 from moviepy.editor import VideoFileClip, ImageClip, CompositeVideoClip, concatenate_videoclips, AudioFileClip
 import json
 import os
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageFilter
 import numpy as np
 import tkinter as tk
 from tkinter import filedialog, messagebox
@@ -14,9 +14,15 @@ FONT_SIZE = 50
 TIMER_FONT_SIZE = 120
 OUTRO_TEXT_QUIZ = "Subscribe for more quizzes!"
 OUTRO_TEXT_FACT = "Subscribe for more fun facts!"
+OUTRO_TEXT_EMOJI = "Subscribe for more emoji challenges!"
+OUTRO_TEXT_CHARACTER = "Subscribe for more character reveals!"
+OUTRO_TEXT_MINIMALIST = "Subscribe for more minimalist challenges!"
+OUTRO_TEXT_THEN_NOW = "Subscribe for more comparisons!"
+OUTRO_TEXT_OPINION = "Subscribe for more hot takes!"
 INTRO_DURATION = 2
 OUTRO_DURATION = 3
 
+# Utility functions (load_background, create_text_with_shadow, etc.) remain unchanged
 def load_background(media_path, duration):
     """Load and prepare background video or image (GIF, MP4, or Image)."""
     if media_path.endswith(('.mp4', '.mov', '.avi')):
@@ -43,7 +49,6 @@ def create_text_with_shadow(text, font_name, color, size, resolution=RESOLUTION,
     img = Image.new('RGBA', resolution, (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
     
-    # Load font
     try:
         font_paths = [
             f"C:\\Windows\\Fonts\\{font_name}.ttf",
@@ -62,15 +67,14 @@ def create_text_with_shadow(text, font_name, color, size, resolution=RESOLUTION,
     except:
         font_obj = ImageFont.load_default()
     
-    # Color mapping
     color_map = {
         'white': (255, 255, 255), 'black': (0, 0, 0), 'red': (255, 0, 0),
         'green': (0, 255, 0), 'blue': (0, 0, 255), 'yellow': (255, 255, 0),
-        'neon-green': (57, 255, 20), 'bright-yellow': (255, 234, 0)
+        'neon-green': (57, 255, 20), 'bright-yellow': (255, 234, 0),
+        'gold': (255, 215, 0), 'orange': (255, 165, 0)
     }
     text_color = color_map.get(color.lower(), (255, 255, 255)) if isinstance(color, str) else color
     
-    # Word wrap text to prevent cutoff
     lines = []
     for line in text.split('\n'):
         if line.strip():
@@ -79,11 +83,9 @@ def create_text_with_shadow(text, font_name, color, size, resolution=RESOLUTION,
         else:
             lines.append('')
     
-    # Calculate text positioning (apply shake offset)
     total_height = len(lines) * (size + 15)
     y_offset = (resolution[1] - total_height) // 2 + shake_offset[1]
     
-    # Draw semi-transparent background
     if shadow:
         padding = 30
         bg_box = Image.new('RGBA', resolution, (0, 0, 0, 0))
@@ -104,7 +106,6 @@ def create_text_with_shadow(text, font_name, color, size, resolution=RESOLUTION,
         img = Image.alpha_composite(img, bg_box)
         draw = ImageDraw.Draw(img)
     
-    # Draw text
     for line in lines:
         if line.strip():
             bbox = draw.textbbox((0, 0), line, font=font_obj)
@@ -165,14 +166,12 @@ def create_highlight_animation(text, font_name, size, resolution=RESOLUTION):
     except:
         font = ImageFont.load_default()
     
-    # Wrap text
     wrapped_lines = textwrap.fill(text, width=25).split('\n')
     line_height = size + 30
     total_height = len(wrapped_lines) * line_height
     
     y_start = (resolution[1] - total_height) // 2
     
-    # Calculate max width
     max_width = 0
     for line in wrapped_lines:
         bbox = draw.textbbox((0, 0), line, font=font)
@@ -180,7 +179,6 @@ def create_highlight_animation(text, font_name, size, resolution=RESOLUTION):
     
     x_center = resolution[0] // 2
     
-    # Glow effect
     padding = 40
     for offset in range(30, 0, -5):
         alpha = int(100 * (offset / 30))
@@ -188,12 +186,10 @@ def create_highlight_animation(text, font_name, size, resolution=RESOLUTION):
                               x_center + max_width//2 + offset + padding, y_start + total_height + offset + padding],
                               radius=30, fill=(0, 255, 0, alpha))
     
-    # Main background
     draw.rounded_rectangle([x_center - max_width//2 - padding, y_start - padding,
                           x_center + max_width//2 + padding, y_start + total_height + padding],
                           radius=20, fill=(0, 200, 0, 255))
     
-    # Answer text (no checkmark)
     y_pos = y_start
     for line in wrapped_lines:
         bbox = draw.textbbox((0, 0), line, font=font)
@@ -221,20 +217,17 @@ def create_fact_text_with_header(fact_text, font_name, color, size, resolution=R
     }
     text_color = color_map.get(color.lower(), (255, 255, 255)) if isinstance(color, str) else color
     
-    # Wrap fact text
     wrapped_fact = textwrap.fill(fact_text, width=35)
     fact_lines = wrapped_fact.split('\n')
     
-    # Calculate positioning
     header = "Did You Know?"
     header_bbox = draw.textbbox((0, 0), header, font=header_font)
     header_width = header_bbox[2] - header_bbox[0]
     header_height = header_bbox[3] - header_bbox[1]
     
     total_height = header_height + 40 + len(fact_lines) * (size + 10)
-    y_start = (resolution[1] - total_height) // 2 + 150  # Centered, slightly below poster
+    y_start = (resolution[1] - total_height) // 2 + 150
     
-    # Draw background
     max_width = header_width
     for line in fact_lines:
         bbox = draw.textbbox((0, 0), line, font=body_font)
@@ -252,12 +245,10 @@ def create_fact_text_with_header(fact_text, font_name, color, size, resolution=R
     img = Image.alpha_composite(img, bg_box)
     draw = ImageDraw.Draw(img)
     
-    # Draw header
     header_x = (resolution[0] - header_width) // 2
     draw.text((header_x + 2, y_start + 2), header, font=header_font, fill=(0, 0, 0, 200))
-    draw.text((header_x, y_start), header, font=header_font, fill=(255, 215, 0))  # Gold color
+    draw.text((header_x, y_start), header, font=header_font, fill=(255, 215, 0))
     
-    # Draw fact lines
     y_pos = y_start + header_height + 40
     for line in fact_lines:
         bbox = draw.textbbox((0, 0), line, font=body_font)
@@ -269,8 +260,16 @@ def create_fact_text_with_header(fact_text, font_name, color, size, resolution=R
     
     return np.array(img)
 
+def apply_blur_to_image(image_path, blur_radius=30):
+    """Apply Gaussian blur to an image."""
+    img = Image.open(image_path).convert('RGBA')
+    img = img.resize(RESOLUTION, Image.Resampling.LANCZOS)
+    blurred = img.filter(ImageFilter.GaussianBlur(radius=blur_radius))
+    return np.array(blurred)
+
+# Video creation functions
 def create_quiz_video(data):
-    """Generate quiz video with proper clip timing."""
+    """Generate quiz video."""
     timer_duration = data.get('timer', 10)
     answer_reveal_duration = 5
     total_duration = INTRO_DURATION + timer_duration + answer_reveal_duration + OUTRO_DURATION
@@ -278,10 +277,8 @@ def create_quiz_video(data):
     if total_duration > 90:
         total_duration = 90
     
-    # Load background for entire duration
     bg_clip = load_background(data['background'], total_duration)
     
-    # Load brand logo if provided
     logo_clip = None
     if 'logo' in data and os.path.exists(data['logo']):
         try:
@@ -292,11 +289,9 @@ def create_quiz_video(data):
     all_clips = []
     current_time = 0
     
-    # Shake animation pattern
     shake_offsets = [(5, 3), (-3, -5), (4, 2), (-2, -3), (0, 0), (3, -2), (-4, 4), (2, -1)]
     frame_duration = INTRO_DURATION / len(shake_offsets)
     
-    # INTRO (2 seconds) with shake animation
     intro_clips = []
     for offset in shake_offsets:
         intro_img = create_text_with_shadow("Movie Quiz Time!", data.get('font', 'Arial'), 
@@ -314,24 +309,16 @@ def create_quiz_video(data):
     
     all_clips.extend(intro_clips)
     
-    # QUIZ SECTION with timer
     question_text = f"{data['question']}\n\n" + "\n".join(data['options'])
     question_img = create_text_with_shadow(question_text, data.get('font', 'Arial'),
                                           data.get('font_color', 'white'), FONT_SIZE - 5)
     
-    # Create each second of timer countdown
     for t in range(timer_duration, 0, -1):
-        # Background for this 1 second
         bg_segment = bg_clip.subclip(current_time, current_time + 1)
-        
-        # Question overlay (persistent)
         question_overlay = ImageClip(question_img).set_duration(1)
-        
-        # Timer overlay
         timer_img = create_circular_timer(t)
         timer_overlay = ImageClip(timer_img).set_duration(1)
         
-        # Composite all layers
         layers = [bg_segment, question_overlay, timer_overlay]
         if logo_clip:
             layers.append(logo_clip.subclip(current_time, current_time + 1))
@@ -340,7 +327,6 @@ def create_quiz_video(data):
         all_clips.append(composite)
         current_time += 1
     
-    # ANSWER REVEAL (5 seconds)
     answer_img = create_highlight_animation(f"Correct Answer:\n{data['correct_answer']}", 
                                            data.get('font', 'Arial'), FONT_SIZE)
     answer_overlay = ImageClip(answer_img).set_duration(answer_reveal_duration)
@@ -354,7 +340,6 @@ def create_quiz_video(data):
     all_clips.append(answer_composite)
     current_time += answer_reveal_duration
     
-    # OUTRO (3 seconds) with shake animation
     outro_clips = []
     for offset in shake_offsets:
         outro_img = create_text_with_shadow(OUTRO_TEXT_QUIZ, data.get('font', 'Arial'),
@@ -372,16 +357,13 @@ def create_quiz_video(data):
     
     all_clips.extend(outro_clips)
     
-    # Concatenate all clips
     final_clip = concatenate_videoclips(all_clips, method="compose")
     
-    # Add audio (FIXED for MoviePy 1.x)
     if 'audio' in data and os.path.exists(data['audio']):
         try:
             audio = AudioFileClip(data['audio'])
             if audio.duration < final_clip.duration:
                 num_loops = int(final_clip.duration / audio.duration) + 1
-                audio_clips = [audio] * num_loops
                 looped_audio = concatenate_videoclips([AudioFileClip(data['audio']).set_duration(audio.duration) for _ in range(num_loops)])
                 looped_audio = looped_audio.subclip(0, final_clip.duration)
                 final_clip = final_clip.set_audio(looped_audio)
@@ -390,22 +372,21 @@ def create_quiz_video(data):
         except Exception as e:
             print(f"Warning: Could not add audio - {e}")
     
-    # Export
     os.makedirs(os.path.dirname(data['output']), exist_ok=True)
-    final_clip.write_videofile(data['output'], codec='libx264', fps=FPS, 
-                               audio_codec='aac', threads=4)
+    final_clip.write_videofile(data['output'], codec='libx264', fps=FPS, audio_codec='aac', threads=4)
     final_clip.close()
     bg_clip.close()
+    if logo_clip:
+        logo_clip.close()
     print(f"Quiz video created: {data['output']}")
 
 def create_fact_video(data):
-    """Generate fun fact video with poster."""
+    """Generate fun fact video."""
     fact_duration = 15
     total_duration = INTRO_DURATION + fact_duration + OUTRO_DURATION
     
     bg_clip = load_background(data['background'], total_duration)
     
-    # Load brand logo if provided
     logo_clip = None
     if 'logo' in data and os.path.exists(data['logo']):
         try:
@@ -416,11 +397,9 @@ def create_fact_video(data):
     all_clips = []
     current_time = 0
     
-    # Shake animation pattern
     shake_offsets = [(5, 3), (-3, -5), (4, 2), (-2, -3), (0, 0), (3, -2), (-4, 4), (2, -1)]
     frame_duration = INTRO_DURATION / len(shake_offsets)
     
-    # Intro with shake animation
     for offset in shake_offsets:
         intro_img = create_text_with_shadow("Movie Fun Fact!", data.get('font', 'Arial'),
                                            data.get('font_color', 'white'), FONT_SIZE + 10, shake_offset=offset)
@@ -434,13 +413,11 @@ def create_fact_video(data):
         all_clips.append(CompositeVideoClip(layers, size=RESOLUTION))
         current_time += frame_duration
     
-    # Fun Fact with header
     fact_img = create_fact_text_with_header(data['fact'], data.get('font', 'Arial'),
                                            data.get('font_color', 'white'), FONT_SIZE - 5)
     fact_overlay = ImageClip(fact_img).set_duration(fact_duration)
     fact_bg = bg_clip.subclip(current_time, current_time + fact_duration)
     
-    # Add poster if provided
     layers = [fact_bg]
     if 'poster' in data and os.path.exists(data['poster']):
         poster = ImageClip(data['poster']).resize(height=700).set_position(('center', 150)).set_duration(fact_duration)
@@ -453,7 +430,6 @@ def create_fact_video(data):
     all_clips.append(fact_composite)
     current_time += fact_duration
     
-    # Outro with shake animation
     for offset in shake_offsets:
         outro_img = create_text_with_shadow(OUTRO_TEXT_FACT, data.get('font', 'Arial'),
                                            data.get('font_color', 'white'), FONT_SIZE, shake_offset=offset)
@@ -469,7 +445,6 @@ def create_fact_video(data):
     
     final_clip = concatenate_videoclips(all_clips, method="compose")
     
-    # Add audio (FIXED)
     if 'audio' in data and os.path.exists(data['audio']):
         try:
             audio = AudioFileClip(data['audio'])
@@ -484,12 +459,499 @@ def create_fact_video(data):
             print(f"Warning: Could not add audio - {e}")
     
     os.makedirs(os.path.dirname(data['output']), exist_ok=True)
-    final_clip.write_videofile(data['output'], codec='libx264', fps=FPS,
-                               audio_codec='aac', threads=4)
+    final_clip.write_videofile(data['output'], codec='libx264', fps=FPS, audio_codec='aac', threads=4)
     final_clip.close()
     bg_clip.close()
+    if logo_clip:
+        logo_clip.close()
     print(f"Fun fact video created: {data['output']}")
 
+def create_emoji_guess_video(data):
+    """Generate emoji guessing video."""
+    countdown_duration = 3
+    reveal_duration = 5
+    total_duration = 5 + 7 + countdown_duration + reveal_duration + OUTRO_DURATION
+    
+    bg_clip = load_background(data['background'], total_duration)
+    
+    logo_clip = None
+    if 'logo' in data and os.path.exists(data['logo']):
+        try:
+            logo_clip = ImageClip(data['logo']).resize(height=120).set_position((50, 50)).set_duration(total_duration)
+        except Exception as e:
+            print(f"Warning: Could not load logo - {e}")
+    
+    all_clips = []
+    current_time = 0
+    
+    intro_img = create_text_with_shadow("Can you guess the movie?", data.get('font', 'Arial'),
+                                       data.get('font_color', 'white'), FONT_SIZE + 10)
+    intro_overlay = ImageClip(intro_img).set_duration(5)
+    intro_bg = bg_clip.subclip(current_time, current_time + 5)
+    layers = [intro_bg, intro_overlay]
+    if logo_clip:
+        layers.append(logo_clip.subclip(current_time, current_time + 5))
+    all_clips.append(CompositeVideoClip(layers, size=RESOLUTION))
+    current_time += 5
+    
+    emoji_text = " ".join(data['emojis'])
+    emoji_img = create_text_with_shadow(emoji_text, data.get('font', 'Arial'),
+                                       data.get('font_color', 'white'), 120)
+    emoji_overlay = ImageClip(emoji_img).set_duration(7)
+    emoji_bg = bg_clip.subclip(current_time, current_time + 7)
+    layers = [emoji_bg, emoji_overlay]
+    if logo_clip:
+        layers.append(logo_clip.subclip(current_time, current_time + 7))
+    all_clips.append(CompositeVideoClip(layers, size=RESOLUTION))
+    current_time += 7
+    
+    for t in range(countdown_duration, 0, -1):
+        timer_img = create_circular_timer(t)
+        timer_overlay = ImageClip(timer_img).set_duration(1)
+        countdown_bg = bg_clip.subclip(current_time, current_time + 1)
+        layers = [countdown_bg, emoji_overlay, timer_overlay]
+        if logo_clip:
+            layers.append(logo_clip.subclip(current_time, current_time + 1))
+        all_clips.append(CompositeVideoClip(layers, size=RESOLUTION))
+        current_time += 1
+    
+    reveal_text = f"{data['movie_title']}\n\n{data.get('fun_fact', '')}"
+    reveal_img = create_text_with_shadow(reveal_text, data.get('font', 'Arial'),
+                                        data.get('font_color', 'white'), FONT_SIZE)
+    reveal_overlay = ImageClip(reveal_img).set_duration(reveal_duration)
+    reveal_bg = bg_clip.subclip(current_time, current_time + reveal_duration)
+    
+    layers = [reveal_bg]
+    if 'poster' in data and os.path.exists(data['poster']):
+        poster = ImageClip(data['poster']).resize(height=800).set_position(('center', 100)).set_duration(reveal_duration)
+        layers.append(poster)
+        reveal_overlay = ImageClip(create_text_with_shadow(reveal_text, data.get('font', 'Arial'),
+                                   data.get('font_color', 'white'), FONT_SIZE - 10)).set_duration(reveal_duration).set_position(('center', 1000))
+    layers.append(reveal_overlay)
+    if logo_clip:
+        layers.append(logo_clip.subclip(current_time, current_time + reveal_duration))
+    all_clips.append(CompositeVideoClip(layers, size=RESOLUTION))
+    current_time += reveal_duration
+    
+    outro_img = create_text_with_shadow(OUTRO_TEXT_EMOJI, data.get('font', 'Arial'),
+                                       data.get('font_color', 'white'), FONT_SIZE)
+    outro_overlay = ImageClip(outro_img).set_duration(OUTRO_DURATION)
+    outro_bg = bg_clip.subclip(current_time, min(current_time + OUTRO_DURATION, bg_clip.duration))
+    layers = [outro_bg, outro_overlay]
+    if logo_clip:
+        layers.append(logo_clip.subclip(current_time, min(current_time + OUTRO_DURATION, bg_clip.duration)))
+    all_clips.append(CompositeVideoClip(layers, size=RESOLUTION))
+    
+    final_clip = concatenate_videoclips(all_clips, method="compose")
+    
+    if 'audio' in data and os.path.exists(data['audio']):
+        try:
+            audio = AudioFileClip(data['audio'])
+            if audio.duration < final_clip.duration:
+                num_loops = int(final_clip.duration / audio.duration) + 1
+                looped_audio = concatenate_videoclips([AudioFileClip(data['audio']).set_duration(audio.duration) for _ in range(num_loops)])
+                looped_audio = looped_audio.subclip(0, final_clip.duration)
+                final_clip = final_clip.set_audio(looped_audio)
+            else:
+                final_clip = final_clip.set_audio(audio.subclip(0, final_clip.duration))
+        except Exception as e:
+            print(f"Warning: Could not add audio - {e}")
+    
+    os.makedirs(os.path.dirname(data['output']), exist_ok=True)
+    final_clip.write_videofile(data['output'], codec='libx264', fps=FPS, audio_codec='aac', threads=4)
+    final_clip.close()
+    bg_clip.close()
+    if logo_clip:
+        logo_clip.close()
+    print(f"Emoji guess video created: {data['output']}")
+
+def create_character_reveal_video(data):
+    """Generate character guessing video with zoom/blur reveal."""
+    hint_duration = 5
+    countdown_duration = 3
+    reveal_duration = 5
+    total_duration = 5 + hint_duration + countdown_duration + reveal_duration + OUTRO_DURATION
+    
+    bg_clip = load_background(data['background'], total_duration)
+    
+    logo_clip = None
+    if 'logo' in data and os.path.exists(data['logo']):
+        try:
+            logo_clip = ImageClip(data['logo']).resize(height=120).set_position((50, 50)).set_duration(total_duration)
+        except Exception as e:
+            print(f"Warning: Could not load logo - {e}")
+    
+    all_clips = []
+    current_time = 0
+    
+    intro_img = create_text_with_shadow("WHO IS THIS MOVIE CHARACTER?", data.get('font', 'Arial'),
+                                       data.get('font_color', 'white'), FONT_SIZE + 5)
+    intro_overlay = ImageClip(intro_img).set_duration(5)
+    intro_bg = bg_clip.subclip(current_time, current_time + 5)
+    
+    blurred_char = ImageClip(apply_blur_to_image(data['character_image'], blur_radius=40)).set_duration(5)
+    layers = [intro_bg, blurred_char, intro_overlay]
+    if logo_clip:
+        layers.append(logo_clip.subclip(current_time, current_time + 5))
+    all_clips.append(CompositeVideoClip(layers, size=RESOLUTION))
+    current_time += 5
+    
+    hint_img = create_text_with_shadow(f"Hint: {data['hint']}", data.get('font', 'Arial'),
+                                      data.get('font_color', 'yellow'), FONT_SIZE)
+    hint_overlay = ImageClip(hint_img).set_duration(hint_duration)
+    hint_bg = bg_clip.subclip(current_time, current_time + hint_duration)
+    blurred_char2 = ImageClip(apply_blur_to_image(data['character_image'], blur_radius=30)).set_duration(hint_duration)
+    layers = [hint_bg, blurred_char2, hint_overlay]
+    if logo_clip:
+        layers.append(logo_clip.subclip(current_time, current_time + hint_duration))
+    all_clips.append(CompositeVideoClip(layers, size=RESOLUTION))
+    current_time += hint_duration
+    
+    for t in range(countdown_duration, 0, -1):
+        timer_img = create_circular_timer(t)
+        timer_overlay = ImageClip(timer_img).set_duration(1)
+        countdown_bg = bg_clip.subclip(current_time, current_time + 1)
+        blurred_char3 = ImageClip(apply_blur_to_image(data['character_image'], blur_radius=20)).set_duration(1)
+        layers = [countdown_bg, blurred_char3, timer_overlay]
+        if logo_clip:
+            layers.append(logo_clip.subclip(current_time, current_time + 1))
+        all_clips.append(CompositeVideoClip(layers, size=RESOLUTION))
+        current_time += 1
+    
+    reveal_img = create_text_with_shadow(f"{data['character_name']}\nfrom {data['movie_title']}", 
+                                        data.get('font', 'Arial'),
+                                        data.get('font_color', 'white'), FONT_SIZE)
+    reveal_overlay = ImageClip(reveal_img).set_duration(reveal_duration).set_position(('center', 1400))
+    reveal_bg = bg_clip.subclip(current_time, current_time + reveal_duration)
+    clear_char = ImageClip(data['character_image']).resize(height=1200).set_position(('center', 100)).set_duration(reveal_duration)
+    layers = [reveal_bg, clear_char, reveal_overlay]
+    if logo_clip:
+        layers.append(logo_clip.subclip(current_time, current_time + reveal_duration))
+    all_clips.append(CompositeVideoClip(layers, size=RESOLUTION))
+    current_time += reveal_duration
+    
+    outro_img = create_text_with_shadow(OUTRO_TEXT_CHARACTER, data.get('font', 'Arial'),
+                                       data.get('font_color', 'white'), FONT_SIZE)
+    outro_overlay = ImageClip(outro_img).set_duration(OUTRO_DURATION)
+    outro_bg = bg_clip.subclip(current_time, min(current_time + OUTRO_DURATION, bg_clip.duration))
+    layers = [outro_bg, outro_overlay]
+    if logo_clip:
+        layers.append(logo_clip.subclip(current_time, min(current_time + OUTRO_DURATION, bg_clip.duration)))
+    all_clips.append(CompositeVideoClip(layers, size=RESOLUTION))
+    
+    final_clip = concatenate_videoclips(all_clips, method="compose")
+    
+    if 'audio' in data and os.path.exists(data['audio']):
+        try:
+            audio = AudioFileClip(data['audio'])
+            if audio.duration < final_clip.duration:
+                num_loops = int(final_clip.duration / audio.duration) + 1
+                looped_audio = concatenate_videoclips([AudioFileClip(data['audio']).set_duration(audio.duration) for _ in range(num_loops)])
+                looped_audio = looped_audio.subclip(0, final_clip.duration)
+                final_clip = final_clip.set_audio(looped_audio)
+            else:
+                final_clip = final_clip.set_audio(audio.subclip(0, final_clip.duration))
+        except Exception as e:
+            print(f"Warning: Could not add audio - {e}")
+    
+    os.makedirs(os.path.dirname(data['output']), exist_ok=True)
+    final_clip.write_videofile(data['output'], codec='libx264', fps=FPS, audio_codec='aac', threads=4)
+    final_clip.close()
+    bg_clip.close()
+    if logo_clip:
+        logo_clip.close()
+    print(f"Character reveal video created: {data['output']}")
+
+def create_minimalist_challenge_video(data):
+    """Generate minimalist poster challenge video."""
+    display_duration = 6
+    reveal_duration = 4
+    total_duration = display_duration + reveal_duration + OUTRO_DURATION
+    
+    bg_clip = load_background(data['background'], total_duration)
+    
+    logo_clip = None
+    if 'logo' in data and os.path.exists(data['logo']):
+        try:
+            logo_clip = ImageClip(data['logo']).resize(height=120).set_position((50, 50)).set_duration(total_duration)
+        except Exception as e:
+            print(f"Warning: Could not load logo - {e}")
+    
+    all_clips = []
+    current_time = 0
+    
+    guess_img = create_text_with_shadow("GUESS THE MOVIE", data.get('font', 'Arial'),
+                                       data.get('font_color', 'white'), FONT_SIZE + 10)
+    guess_overlay = ImageClip(guess_img).set_duration(display_duration).set_position(('center', 200))
+    display_bg = bg_clip.subclip(current_time, current_time + display_duration)
+    minimalist = ImageClip(data['minimalist_icon']).resize(height=800).set_position(('center', 600)).set_duration(display_duration)
+    layers = [display_bg, minimalist, guess_overlay]
+    if logo_clip:
+        layers.append(logo_clip.subclip(current_time, current_time + display_duration))
+    all_clips.append(CompositeVideoClip(layers, size=RESOLUTION))
+    current_time += display_duration
+    
+    reveal_bg = bg_clip.subclip(current_time, current_time + reveal_duration)
+    poster = ImageClip(data['movie_poster']).resize(height=1500).set_position(('center', 200)).set_duration(reveal_duration)
+    layers = [reveal_bg, poster]
+    if logo_clip:
+        layers.append(logo_clip.subclip(current_time, current_time + reveal_duration))
+    all_clips.append(CompositeVideoClip(layers, size=RESOLUTION))
+    current_time += reveal_duration
+    
+    outro_img = create_text_with_shadow(OUTRO_TEXT_MINIMALIST, data.get('font', 'Arial'),
+                                       data.get('font_color', 'white'), FONT_SIZE)
+    outro_overlay = ImageClip(outro_img).set_duration(OUTRO_DURATION)
+    outro_bg = bg_clip.subclip(current_time, min(current_time + OUTRO_DURATION, bg_clip.duration))
+    layers = [outro_bg, outro_overlay]
+    if logo_clip:
+        layers.append(logo_clip.subclip(current_time, min(current_time + OUTRO_DURATION, bg_clip.duration)))
+    all_clips.append(CompositeVideoClip(layers, size=RESOLUTION))
+    
+    final_clip = concatenate_videoclips(all_clips, method="compose")
+    
+    if 'audio' in data and os.path.exists(data['audio']):
+        try:
+            audio = AudioFileClip(data['audio'])
+            if audio.duration < final_clip.duration:
+                num_loops = int(final_clip.duration / audio.duration) + 1
+                looped_audio = concatenate_videoclips([AudioFileClip(data['audio']).set_duration(audio.duration) for _ in range(num_loops)])
+                looped_audio = looped_audio.subclip(0, final_clip.duration)
+                final_clip = final_clip.set_audio(looped_audio)
+            else:
+                final_clip = final_clip.set_audio(audio.subclip(0, final_clip.duration))
+        except Exception as e:
+            print(f"Warning: Could not add audio - {e}")
+    
+    os.makedirs(os.path.dirname(data['output']), exist_ok=True)
+    final_clip.write_videofile(data['output'], codec='libx264', fps=FPS, audio_codec='aac', threads=4)
+    final_clip.close()
+    bg_clip.close()
+    if logo_clip:
+        logo_clip.close()
+    print(f"Minimalist challenge video created: {data['output']}")
+
+def create_then_now_video(data):
+    """Generate then & now comparison video."""
+    then_duration = 5
+    now_duration = 5
+    total_duration = (then_duration + now_duration) * len(data['comparisons']) + OUTRO_DURATION
+    
+    bg_clip = load_background(data['background'], total_duration)
+    
+    logo_clip = None
+    if 'logo' in data and os.path.exists(data['logo']):
+        try:
+            logo_clip = ImageClip(data['logo']).resize(height=120).set_position((50, 50)).set_duration(total_duration)
+        except Exception as e:
+            print(f"Warning: Could not load logo - {e}")
+    
+    all_clips = []
+    current_time = 0
+    
+    for comparison in data['comparisons']:
+        then_img = create_text_with_shadow(f"THEN ({comparison['then_year']})\n{comparison['name']}", 
+                                          data.get('font', 'Arial'),
+                                          data.get('font_color', 'white'), FONT_SIZE)
+        then_overlay = ImageClip(then_img).set_duration(then_duration).set_position(('center', 1500))
+        then_bg = bg_clip.subclip(current_time, current_time + then_duration)
+        then_photo = ImageClip(comparison['then_image']).resize(height=1200).set_position(('center', 100)).set_duration(then_duration)
+        layers = [then_bg, then_photo, then_overlay]
+        if logo_clip:
+            layers.append(logo_clip.subclip(current_time, current_time + then_duration))
+        all_clips.append(CompositeVideoClip(layers, size=RESOLUTION))
+        current_time += then_duration
+        
+        now_img = create_text_with_shadow(f"NOW ({comparison['now_year']})\n{comparison['name']}", 
+                                         data.get('font', 'Arial'),
+                                         data.get('font_color', 'white'), FONT_SIZE)
+        now_overlay = ImageClip(now_img).set_duration(now_duration).set_position(('center', 1500))
+        now_bg = bg_clip.subclip(current_time, current_time + now_duration)
+        now_photo = ImageClip(comparison['now_image']).resize(height=1200).set_position(('center', 100)).set_duration(now_duration)
+        layers = [now_bg, now_photo, now_overlay]
+        if logo_clip:
+            layers.append(logo_clip.subclip(current_time, current_time + now_duration))
+        all_clips.append(CompositeVideoClip(layers, size=RESOLUTION))
+        current_time += now_duration
+    
+    outro_img = create_text_with_shadow(OUTRO_TEXT_THEN_NOW, data.get('font', 'Arial'),
+                                       data.get('font_color', 'white'), FONT_SIZE)
+    outro_overlay = ImageClip(outro_img).set_duration(OUTRO_DURATION)
+    outro_bg = bg_clip.subclip(current_time, min(current_time + OUTRO_DURATION, bg_clip.duration))
+    layers = [outro_bg, outro_overlay]
+    if logo_clip:
+        layers.append(logo_clip.subclip(current_time, min(current_time + OUTRO_DURATION, bg_clip.duration)))
+    all_clips.append(CompositeVideoClip(layers, size=RESOLUTION))
+    
+    final_clip = concatenate_videoclips(all_clips, method="compose")
+    
+    if 'audio' in data and os.path.exists(data['audio']):
+        try:
+            audio = AudioFileClip(data['audio'])
+            if audio.duration < final_clip.duration:
+                num_loops = int(final_clip.duration / audio.duration) + 1
+                looped_audio = concatenate_videoclips([AudioFileClip(data['audio']).set_duration(audio.duration) for _ in range(num_loops)])
+                looped_audio = looped_audio.subclip(0, final_clip.duration)
+                final_clip = final_clip.set_audio(looped_audio)
+            else:
+                final_clip = final_clip.set_audio(audio.subclip(0, final_clip.duration))
+        except Exception as e:
+            print(f"Warning: Could not add audio - {e}")
+    
+    os.makedirs(os.path.dirname(data['output']), exist_ok=True)
+    final_clip.write_videofile(data['output'], codec='libx264', fps=FPS, audio_codec='aac', threads=4)
+    final_clip.close()
+    bg_clip.close()
+    if logo_clip:
+        logo_clip.close()
+    print(f"Then & Now video created: {data['output']}")
+
+# def create_opinion_video(data):
+    # """Generate unpopular opinion video."""
+    # opinion_duration = 5
+    # total_duration = len(data['opinions']) * opinion_duration + OUTRO_DURATION
+    
+    # bg_clip = load_background(data['background'], total_duration)
+    
+    # logo_clip = None
+    # if 'logo' in data and os.path.exists(data['logo']):
+        # try:
+            # logo_clip = ImageClip(data['logo']).resize(height=120).set_position((50, 50)).set_duration(total_duration)
+        # except Exception as e:
+            # print(f"Warning: Could not load logo - {e}")
+    
+    # all_clips = []
+    # current_time = 0
+    
+    # for opinion in data['opinions']:
+        # opinion_text = f"Unpopular Opinion:\n\n{opinion}"
+        # opinion_img = create_text_with_shadow(opinion_text, data.get('font', 'Arial'),
+                                             # data.get('font_color', 'white'), FONT_SIZE - 5)
+        # opinion_overlay = ImageClip(opinion_img).set_duration(opinion_duration)
+        # opinion_bg = bg_clip.subclip(current_time, current_time + opinion_duration)
+        # layers = [opinion_bg, opinion_overlay]
+        # if logo_clip:
+            # layers.append(logo_clip.subclip(current_time, current_time + opinion_duration))
+        # all_clips.append(CompositeVideoClip(layers, size=RESOLUTION))
+        # current_time += opinion_duration
+    
+    # outro_img = create_text_with_shadow(f"{OUTRO_TEXT_OPINION}\n\nTELL US YOUR HOT TAKES!", 
+                                       # data.get('font', 'Arial'),
+                                       # data.get('font_color', 'white'), FONT_SIZE)
+    # outro_overlay = ImageClip(outro_img).set_duration(OUTRO_DURATION)
+    # outro_bg = bg_clip.subclip(current_time, min(current_time + OUTRO_DURATION, bg_clip.duration))
+    # layers = [outro_bg, outro_overlay]
+    # if logo_clip:
+        # layers.append(logo_clip.subclip(current_time, min(current_time + OUTRO_DURATION, bg_clip.duration)))
+    # all_clips.append(CompositeVideoClip(layers, size=RESOLUTION))
+    
+    # final_clip = concatenate_videoclips(all_clips, method="compose")
+    
+    # if 'audio' in data and os.path.exists(data['audio']):
+        # try:
+            # audio = AudioFileClip(data['audio'])
+            # if audio.duration < final_clip.duration:
+                # num_loops = int(final_clip.duration / audio.duration) + 1
+                # looped_audio = concatenate_videoclips([AudioFileClip(data['audio']).set_duration(audio.duration) for _ in range(num_loops)])
+                # looped_audio = looped_audio.subclip(0, final_clip.duration)
+                # final_clip = final_clip.set_audio(looped_audio)
+            # else:
+                # final_clip = final_clip.set_audio(audio.subclip(0, final_clip.duration))
+        # except Exception as e:
+            # print(f"Warning: Could not add audio - {e}")
+    
+    # os.makedirs(os.path.dirname(data['output']), exist_ok=True)
+    # final_clip.write_videofile(data['output'], codec='libx264', fps=FPS, audio_codec='aac', threads=4)
+    # final_clip.close()
+    # bg_clip.close()
+    # if logo_clip:
+        # logo_clip.close()
+    # print(f"Opinion video created: {data['output']}")
+
+
+
+
+
+def create_opinion_video(data):
+    """Generate unpopular opinion video."""
+    opinion_duration = 5
+    total_duration = len(data['opinions']) * opinion_duration + OUTRO_DURATION
+    
+    bg_clip = load_background(data['background'], total_duration)
+    logo_clip = None
+    try:
+        if 'logo' in data and os.path.exists(data['logo']):
+            logo_clip = ImageClip(data['logo']).resize(height=120).set_position((50, 50)).set_duration(total_duration)
+        
+        all_clips = []
+        current_time = 0
+        
+        for opinion in data['opinions']:
+            opinion_text = f"Unpopular Opinion:\n\n{opinion}"
+            opinion_img = create_text_with_shadow(opinion_text, data.get('font', 'Arial'),
+                                                 data.get('font_color', 'white'), FONT_SIZE - 5)
+            opinion_overlay = ImageClip(opinion_img).set_duration(opinion_duration)
+            opinion_bg = bg_clip.subclip(current_time, current_time + opinion_duration)
+            layers = [opinion_bg, opinion_overlay]
+            if logo_clip:
+                layers.append(logo_clip.subclip(current_time, current_time + opinion_duration))
+            all_clips.append(CompositeVideoClip(layers, size=RESOLUTION))
+            current_time += opinion_duration
+        
+        outro_img = create_text_with_shadow(f"{OUTRO_TEXT_OPINION}\n\nTELL US YOUR HOT TAKES!", 
+                                           data.get('font', 'Arial'),
+                                           data.get('font_color', 'white'), FONT_SIZE)
+        outro_overlay = ImageClip(outro_img).set_duration(OUTRO_DURATION)
+        outro_bg = bg_clip.subclip(current_time, min(current_time + OUTRO_DURATION, bg_clip.duration))
+        layers = [outro_bg, outro_overlay]
+        if logo_clip:
+            layers.append(logo_clip.subclip(current_time, min(current_time + OUTRO_DURATION, bg_clip.duration)))
+        all_clips.append(CompositeVideoClip(layers, size=RESOLUTION))
+        
+        final_clip = concatenate_videoclips(all_clips, method="compose")
+        
+        if 'audio' in data and os.path.exists(data['audio']):
+            try:
+                audio = AudioFileClip(data['audio'])
+                if audio.duration < final_clip.duration:
+                    num_loops = int(final_clip.duration / audio.duration) + 1
+                    looped_audio = concatenate_videoclips([AudioFileClip(data['audio']).set_duration(audio.duration) for _ in range(num_loops)])
+                    looped_audio = looped_audio.subclip(0, final_clip.duration)
+                    final_clip = final_clip.set_audio(looped_audio)
+                else:
+                    final_clip = final_clip.set_audio(audio.subclip(0, final_clip.duration))
+                audio.close()
+            except Exception as e:
+                print(f"Warning: Could not add audio - {e}")
+        
+        os.makedirs(os.path.dirname(data['output']), exist_ok=True)
+        final_clip.write_videofile(data['output'], codec='libx264', fps=FPS, audio_codec='aac', threads=4)
+        print(f"Opinion video created: {data['output']}")
+    finally:
+        try:
+            bg_clip.close()
+        except Exception as e:
+            print(f"Warning: Failed to close bg_clip - {e}")
+        if logo_clip:
+            try:
+                logo_clip.close()
+            except Exception as e:
+                print(f"Warning: Failed to close logo_clip - {e}")
+        try:
+            final_clip.close()
+        except Exception as e:
+            print(f"Warning: Failed to close final_clip - {e}")
+
+
+
+
+
+
+
+
+
+
+# Process input and GUI functions
 def process_input(input_file):
     """Process JSON input."""
     with open(input_file, 'r', encoding='utf-8') as f:
@@ -497,10 +959,24 @@ def process_input(input_file):
     
     for idx, data in enumerate(data_list, 1):
         print(f"\nGenerating video {idx}/{len(data_list)}...")
-        if data['type'] == 'quiz':
+        video_type = data.get('type')
+        
+        if video_type == 'quiz':
             create_quiz_video(data)
-        elif data['type'] == 'fact':
+        elif video_type == 'fact':
             create_fact_video(data)
+        elif video_type == 'emoji_guess':
+            create_emoji_guess_video(data)
+        elif video_type == 'character_reveal':
+            create_character_reveal_video(data)
+        elif video_type == 'minimalist_challenge':
+            create_minimalist_challenge_video(data)
+        elif video_type == 'then_now':
+            create_then_now_video(data)
+        elif video_type == 'opinion':
+            create_opinion_video(data)
+        else:
+            print(f"Unknown video type: {video_type}")
 
 def run_gui():
     """Simple GUI."""
